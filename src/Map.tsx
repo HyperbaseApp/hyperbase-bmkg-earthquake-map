@@ -16,7 +16,7 @@ export default function EarthquakeMap(props: Props) {
   } as Viewport);
 
   createEffect(() => {
-    if (props.data.length === 0) return;
+    if (!props.data) return;
 
     const mapData = new Array<MapData>(props.data.length);
 
@@ -31,7 +31,6 @@ export default function EarthquakeMap(props: Props) {
       };
     });
 
-    console.log(mapData);
     setData(mapData);
   }, [props.data]);
 
@@ -46,9 +45,22 @@ export default function EarthquakeMap(props: Props) {
           {(d, idx) => (
             <Marker
               lngLat={d.coordinates}
-              options={{ color: "#F00" }}
+              options={{
+                element: (
+                  <div
+                    style={{
+                      width: Number(d.rawData.magnitude) * 5 + "px",
+                      height: Number(d.rawData.magnitude) * 5 + "px",
+                    }}
+                  >
+                    <div class="absolute w-full h-full rounded-full bg-red-600/50 animate-ping" />
+                    <div class="w-full h-full rounded-full bg-red-600/70" />
+                  </div>
+                ) as HTMLElement,
+              }}
               showPopup={idx() === popupIdx()}
               onOpen={() => setPopupIdx(idx())}
+              onClose={() => setPopupIdx(-1)}
             >
               <div class="h-60 overflow-y-auto">
                 <p>Tanggal: {d.rawData.tanggal}</p>
@@ -63,7 +75,16 @@ export default function EarthquakeMap(props: Props) {
                   <p>Dirasakan: {d.rawData.dirasakan}</p>
                 </Show>
                 <Show when={d.rawData.shakemap_url}>
-                  <img src={d.rawData.shakemap_url} />
+                  <div class="mt-2 relative group">
+                    <a
+                      href={d.rawData.shakemap_url}
+                      target="_blank"
+                      class="absolute invisible group-hover:visible h-full w-full bg-black/40 flex items-center justify-center text-center text-white"
+                    >
+                      Buka di tab baru
+                    </a>
+                    <img src={d.rawData.shakemap_url} />
+                  </div>
                 </Show>
               </div>
             </Marker>

@@ -1,9 +1,25 @@
-import { createRenderEffect, createSignal, type Component } from "solid-js";
+import {
+  createRenderEffect,
+  createSignal,
+  Show,
+  type Component,
+} from "solid-js";
 import EarthquakeMap from "./Map";
-import { Hyperbase } from "./hyperbase/hyperbase";
+import { Hyperbase, HyperbaseCollection } from "./hyperbase/hyperbase";
+import { initializeDateRange } from "./utils/initializeDateRange";
+import DateRangePicker from "./components/DateRangePicker";
+import Loading from "./components/Loading";
 
 const App: Component = () => {
+  const [hyperbaseCollection, setHyperbaseCollection] =
+    createSignal<HyperbaseCollection>();
+
+  const [loading, setLoading] = createSignal(true);
   const [data, setData] = createSignal<EarthquakeData[]>([]);
+
+  const [dateRange, setDateRange] = createSignal<[Date, Date]>(
+    initializeDateRange()
+  );
 
   createRenderEffect(() => {
     (async () => {
@@ -27,12 +43,54 @@ const App: Component = () => {
         import.meta.env.VITE_HYPERBASE_COLLECTION_ID
       );
 
-      const data = await hyperbaseCollection.findMany<EarthquakeData[]>();
-      setData(data);
+      setHyperbaseCollection(hyperbaseCollection);
     })();
   });
 
-  return <EarthquakeMap data={data()} />;
+  createRenderEffect(() => {
+    const hb = hyperbaseCollection();
+    if (!hb) return;
+
+    const dtrange = dateRange();
+    if (!dtrange || dtrange.length !== 2) return;
+
+    (async () => {
+      setLoading(true);
+
+      const data = await hb.findMany<EarthquakeData[]>({
+        filters: [
+          {
+            op: "AND",
+            children: [
+              {
+                field: "datetime",
+                op: ">=",
+                value: dtrange[0],
+              },
+              {
+                field: "datetime",
+                op: "<=",
+                value: dtrange[1],
+              },
+            ],
+          },
+        ],
+      });
+      setData(data);
+
+      setLoading(false);
+    })();
+  });
+
+  return (
+    <main>
+      <EarthquakeMap data={data()} />
+      <DateRangePicker dateRange={dateRange()} setDateRange={setDateRange} />
+      <Show when={loading()}>
+        <Loading />
+      </Show>
+    </main>
+  );
 };
 
 export default App;

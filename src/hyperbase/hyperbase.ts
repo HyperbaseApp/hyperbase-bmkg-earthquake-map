@@ -82,7 +82,7 @@ export class HyperbaseCollection {
         this.#baseUrl = hyperbaseProject.projectUrl + "/collection/" + collectionId
     }
 
-    async findMany<T>(data?: any) {
+    async findMany<T>(data?: FindManyOpts) {
         const url = this.#baseUrl + "/records"
 
         let fields, filters, groups, orders, limit;
@@ -132,4 +132,12 @@ interface HyperbaseErrorRes {
 
 interface HyperbaseAuthRes {
     token: string
+}
+
+interface FindManyOpts {
+    fields?: string[]
+    filters?: Object
+    groups?: string
+    orders?: "ASC" | "DESC"
+    limit?: number
 }
